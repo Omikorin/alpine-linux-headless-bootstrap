@@ -76,12 +76,6 @@ cat <<-EOF >>/tmp/.trash/headless_cleanup
 	rm -f /etc/init.d/headless_*
 	_logger "Clean-up done, enjoy !"
 	cat /tmp/.trash/banner >/dev/console
-	if [ -c /dev/ttyGS${gdgt_id} ]; then
-		# Enabling terminal login into valid serial port:
-		# no choice than making permanent change to /etc/securetty (Alpine 3.19 already has ttyGS0).
-		grep -q "ttyGS${gdgt_id}" /etc/securetty || echo "ttyGS${gdgt_id}" >>/etc/securetty
-		/sbin/getty -L 115200 /dev/ttyGS${gdgt_id} vt100 &
-	fi
 	exit 0
 	EOF
 chmod +x /tmp/.trash/headless_cleanup
@@ -305,31 +299,22 @@ rc-service networking restart
 }
 
 _setup_gadget() {
-## Load composite USB Serial/USB Ethernel driver & setup terminal.
-_logger "Enabling USB-gadget Serial and Ethernet ports"
+## Load USB Ethernet driver for gadget mode.
+_logger "Enabling USB-gadget Ethernet port"
 # Remove conflicting modules in case they were initially loaded (cmdline.txt).
 modprobe -r g_serial g_ether g_cdc
 modprobe g_ether
-# Wait for g_ether to settle and serial ports become available
-timeout 1 sh <<-EOF
-	while ! grep -q "ttyGS" /proc/devices; do sleep 0.2; done
-	EOF
+# Wait for g_ether to settle and network interface to become available
+sleep 1
 
 # Determine which gadget ID is connected with USB cable (assume just one max).
-# (setting console to unconnected serial port would block boot)
 gdgt_id="$( find /sys/class/udc/*/current_speed -exec \
 	sh -c 'grep -vq "UNKNOWN" "$0" && find ${0/current_speed/}device/gadget.* -maxdepth 0' {} \; \
 		| sed 's/\/.*gadget\.//' )"
-if [ -c /dev/ttyGS"${gdgt_id}" ]; then
-	# Default serial config: xon/xoff flow control.
-	stty -F /dev/ttyGS"${gdgt_id}"
-	setconsole /dev/ttyGS"${gdgt_id}"
-	# Notes to users willing to connect from Linux Ubuntu-based host terminal:
-	# - user on host needs to be part of dialout group (reboot required), and
-	# - disable spurious AT commands from ModemManager on host-side Gadget serial port
-	# one may create a /etc/udev/rules.d/99-ttyacms-gadget.rules as per:
-	# https://linux-tips.com/t/prevent-modem-manager-to-capture-usb-serial-devices/284/2
-	# ATTRS{idVendor}=="0525" ATTRS{idProduct}=="a4aa", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+# Check if g_ether interface is available (gadget ethernet)
+if [ -n "$gdgt_id" ] && find /sys/class/udc/*/device/gadget."${gdgt_id}"/net/* -maxdepth 0 >/dev/null 2>&1; then
+	_logger "USB-gadget Ethernet interface detected"
 else
 	_logger "USB-gadget port not connected !"
 	modprobe -r g_ether
