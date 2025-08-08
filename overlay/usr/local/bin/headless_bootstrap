@@ -156,11 +156,8 @@ rc-service sshd restart
 
 _updt_apkovl() {
 ## Update apkovl overlay file & eventually reboot
-# URL redirects to apkovl file on github master: is.gd shortener provides basic analytics.
-# Analytics are public and can be checked at https://is.gd/stats.php?url=apkovl_master
-# Privacy policy: https://is.gd/privacy.php
-local file_url="https://is.gd/apkovl_master"
-local sha_url="https://github.com/macmpi/alpine-linux-headless-bootstrap/raw/main/headless.apkovl.tar.gz.sha512"
+local file_url="https://github.com/Omikorin/alpine-linux-headless-bootstrap/raw/main/headless.apkovl.tar.gz"
+local sha_url="https://github.com/Omikorin/alpine-linux-headless-bootstrap/raw/main/headless.apkovl.tar.gz.sha512"
 local updt_status="failed, keeping original version"
 
 # Ensure system date is correct to allow SSL transactions
@@ -193,12 +190,9 @@ exit 0
 
 _tst_version() {
 ## Compare current version with latest online, notify & eventally calls for update
-# URL redirects to github project page: is.gd shortener provides basic analytics.
-# Analytics are public and can be checked at https://is.gd/stats.php?url=apkovl_run
-# Privacy policy: https://is.gd/privacy.php
 local vers=""
-local ref="/macmpi/alpine-linux-headless-bootstrap/releases/tag/v"
-local url="https://is.gd/apkovl_run"
+local ref="/Omikorin/alpine-linux-headless-bootstrap/releases/tag/v"
+local url="https://github.com/Omikorin/alpine-linux-headless-bootstrap"
 
 if wget -q -O /tmp/homepg -T 10 --no-check-certificate "$url" >/dev/null 2>&1; then
 	_logger "Internet access: success"
@@ -348,7 +342,7 @@ fi
 
 # Redirect stdout and errors to console as service won't show messages
 exec 1>/dev/console 2>&1
-_logger "Alpine Linux headless bootstrap v$HDLSBSTRP_VERSION by macmpi"
+_logger "Alpine Linux headless bootstrap v$HDLSBSTRP_VERSION by macmpi modified"
 
 # Help randomness for wpa_supplicant and sshd (urandom until 3.16).
 rc-service seedrng restart || rc-service urandom restart
@@ -380,7 +374,7 @@ _is_ro() { return "$is_ro"; }
 _is_ro && warn="(remount partition rw!)"
 cat <<-EOF >/tmp/.trash/banner
 
-	Alpine Linux headless bootstrap v$HDLSBSTRP_VERSION by macmpi
+	Alpine Linux headless bootstrap v$HDLSBSTRP_VERSION by macmpi modified
 	
 	You may want to delete/rename .apkovl file before reboot ${warn}:
 	${ovl}
