@@ -309,8 +309,8 @@ _setup_gadget() {
 _logger "Enabling USB-gadget Serial and Ethernet ports"
 # Remove conflicting modules in case they were initially loaded (cmdline.txt).
 modprobe -r g_serial g_ether g_cdc
-modprobe g_cdc
-# Wait for g_cdc to settle and serial ports become available
+modprobe g_ether
+# Wait for g_ether to settle and serial ports become available
 timeout 1 sh <<-EOF
 	while ! grep -q "ttyGS" /proc/devices; do sleep 0.2; done
 	EOF
@@ -332,7 +332,7 @@ if [ -c /dev/ttyGS"${gdgt_id}" ]; then
 	# ATTRS{idVendor}=="0525" ATTRS{idProduct}=="a4aa", ENV{ID_MM_DEVICE_IGNORE}="1"
 else
 	_logger "USB-gadget port not connected !"
-	modprobe -r g_cdc
+	modprobe -r g_ether
 fi
 }
 
